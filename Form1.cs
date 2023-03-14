@@ -55,7 +55,7 @@ namespace Notepad
             LoadAssets();
             // add UI Elements
             AddUI(OpenFile(fileToReadFrom));
-
+            this.Load += this.OnFormLoad;
     
             //this.Resize += this.Form1Resize;
         }
@@ -143,7 +143,8 @@ namespace Notepad
                 BorderStyle = BorderStyle.None,
                 Font = defaultFont,
                 Text = textToAdd,
-                TabStop = false
+                TabStop = false,
+                TabIndex = 0
             };
 
             textBox.TextChanged += this.OnTextChanged;
@@ -267,7 +268,6 @@ namespace Notepad
             searchBox.KeyDown += this.HandleHotkey;
             this.KeyDown += this.HandleHotkey;
 
-
             this.Controls.Add(searchBar);
             this.Controls.Add(topbar);
             this.Controls.Add(textBox);
@@ -278,6 +278,13 @@ namespace Notepad
         {
         
         }*/
+
+        private void OnFormLoad(object sender, EventArgs e)
+        {
+            textBox.Select();
+            this.ActiveControl = textBox;
+            textBox.Focus();
+        }
 
         // Windows event message constants
         private const int
@@ -321,6 +328,9 @@ namespace Notepad
                 case Keys.F:
                     ToggleTextSearch();
                     break;
+                default:
+                    // return so only these key bindings are considered handled
+                    return;
             }
             // prevent windows error sound from playing when ctrl+f
             e.Handled = true;
@@ -336,7 +346,7 @@ namespace Notepad
             }
             else
             {
-                searchBox.Text = "";
+                searchBox.Clear();
                 textBox.Focus();
             }
             
@@ -469,6 +479,11 @@ namespace Notepad
             SaveToFile();
         }
 
+        private void OnSaveFail() 
+        {
+            // TODO: somehow tell user save to file failed
+        }
+
         private void SaveToFile()
         {
             if (curFile == "" || !edited) return;
@@ -480,7 +495,7 @@ namespace Notepad
             }
             catch
             {
-                // maybe try to inform user that save failed somehow?
+                OnSaveFail();
             }
         }
 
@@ -502,7 +517,7 @@ namespace Notepad
                 }
                 catch
                 {
-                    // maybe try to inform user that save failed somehow?
+                    OnSaveFail();
                 }
             }
         }
