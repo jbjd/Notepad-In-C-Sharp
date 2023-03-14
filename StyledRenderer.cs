@@ -12,10 +12,6 @@ namespace Notepad
         {
             e.Graphics.FillRectangle(new SolidBrush(e.Item.Selected ? selectedBackground : background), new Rectangle(Point.Empty, e.Item.Size));
         }
-        protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e)
-        {
-            base.OnRenderItemText(e);
-        }
         protected override void OnRenderToolStripBackground(ToolStripRenderEventArgs e)
         {
             Rectangle rect = new Rectangle(Point.Empty, e.ToolStrip.Size);
