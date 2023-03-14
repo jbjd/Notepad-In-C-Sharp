@@ -32,12 +32,16 @@ namespace Notepad
         private readonly ImageList exitImages = new ImageList();
         private readonly ImageList maxImages = new ImageList();
         private readonly ImageList minImages = new ImageList();
-        private Panel topbar;
+        private Panel 
+            topbar,
+            searchBar;
         private PictureBox 
             exitButton,
             maxButton,
             minButton;
-        private TextBox textBox;
+        private TextBox 
+            textBox,
+            searchBox;
         private int FontSize;
         private string curFile = "";
         private bool edited = false;
@@ -121,7 +125,10 @@ namespace Notepad
             TextColor = Color.FromArgb(255, 245, 245, 245);
             // determine font size in future?
             FontSize = 11;
+            Font defaultFont = new Font(new FontFamily("Arial"), FontSize);
+            
 
+            // main text box
             textBox = new TextBox
             {
                 BackColor = Color.FromArgb(255, 90, 90, 90),
@@ -132,12 +139,14 @@ namespace Notepad
                 Location = new Point(GRIP, HEADER_SIZE + (HEADER_SIZE / 3)),
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
                 Width = this.Width - GRIP - GRIP,
-                Height = this.Height - GRIP - HEADER_SIZE,
+                Height = this.Height - GRIP - HEADER_SIZE - (HEADER_SIZE / 3),
                 BorderStyle = BorderStyle.None,
-                Font = new Font(new FontFamily("Arial"), FontSize),
+                Font = defaultFont,
                 Text = textToAdd,
                 TabStop = false
             };
+
+            textBox.TextChanged += this.OnTextChanged;
 
             // make topbar and buttons within
             topbar = new Panel
@@ -192,10 +201,6 @@ namespace Notepad
             exitButton.MouseLeave += this.ExitHoverExit;
             topbar.Controls.Add(exitButton);
 
-            textBox.KeyDown += this.HandleHotkey;
-            this.KeyDown += this.HandleHotkey;
-            textBox.TextChanged += this.OnTextChanged;
-
             MenuStrip Menu = new MenuStrip
             {
                 Anchor = AnchorStyles.Top | AnchorStyles.Left,
@@ -229,6 +234,41 @@ namespace Notepad
 
             topbar.Controls.Add(Menu);
 
+            searchBar = new Panel
+            {
+                BackColor = HeaderColor,
+                Height = HEADER_SIZE,
+                Width = 360,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Location = new Point(this.Width - 360, 30),
+                Padding = new Padding(4),
+                Margin = new Padding(0),
+                AutoSize = false,
+                Visible = false
+            };
+
+            // text box for searching
+            searchBox = new TextBox
+            {
+                BackColor = Color.FromArgb(255, 120, 120, 120),
+                ForeColor = TextColor,
+                AcceptsTab = true,
+                Location = new Point(0, 0),
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.None,
+                Font = defaultFont,
+                TabStop = false
+            };
+
+            searchBar.Controls.Add(searchBox);
+
+            textBox.KeyDown += this.HandleHotkey;
+            searchBox.KeyDown += this.HandleHotkey;
+            this.KeyDown += this.HandleHotkey;
+
+
+            this.Controls.Add(searchBar);
             this.Controls.Add(topbar);
             this.Controls.Add(textBox);
         }
@@ -278,7 +318,28 @@ namespace Notepad
                 case Keys.O:
                     OpenFileWithDialog();
                     break;
+                case Keys.F:
+                    ToggleTextSearch();
+                    break;
             }
+            // prevent windows error sound from playing when ctrl+f
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+        }
+
+        private void ToggleTextSearch()
+        {
+            searchBar.Visible = !searchBar.Visible;
+            if (searchBar.Visible)
+            {
+                searchBox.Focus();
+            }
+            else
+            {
+                searchBox.Text = "";
+                textBox.Focus();
+            }
+            
         }
 
         private void Shutdown()
