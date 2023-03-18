@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Notepad
 {    
@@ -17,7 +18,8 @@ namespace Notepad
         // Constants
         private const int 
             HEADER_SIZE = 30,
-            GRIP = 8;      // Grip size
+            GRIP = 8,  // Grip size
+            DGRIP = GRIP+GRIP;  // Double the grip size
         private readonly SaveFileDialog saveAsDialog = new SaveFileDialog
         {
             Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
@@ -39,9 +41,10 @@ namespace Notepad
             exitButton,
             maxButton,
             minButton;
-        private TextBox 
-            textBox,
-            searchBox;
+        private TextBox
+            searchBox,
+            textBox;
+        
         private int FontSize;
         private string curFile = "";
         private bool edited = false;
@@ -56,8 +59,6 @@ namespace Notepad
             // add UI Elements
             AddUI(OpenFile(fileToReadFrom));
             this.Load += this.OnFormLoad;
-    
-            //this.Resize += this.Form1Resize;
         }
 
         // loads images for buttons
@@ -136,18 +137,33 @@ namespace Notepad
                 AcceptsReturn = true,
                 AcceptsTab = true,
                 Multiline = true,
-                Location = new Point(GRIP, HEADER_SIZE + (HEADER_SIZE / 3)),
+                Location = new Point(0, 0),
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Width = this.Width - GRIP - GRIP,
+                Width = this.Width - DGRIP + SystemInformation.VerticalScrollBarWidth,
                 Height = this.Height - GRIP - HEADER_SIZE - (HEADER_SIZE / 3),
                 BorderStyle = BorderStyle.None,
                 Font = defaultFont,
                 Text = textToAdd,
                 TabStop = false,
-                TabIndex = 0
+                TabIndex = 0,
+                ScrollBars = ScrollBars.Vertical,
             };
 
             textBox.TextChanged += this.OnTextChanged;
+
+            // make topbar and buttons within
+            Panel textBoxWrapper = new Panel
+            {
+                BackColor = HeaderColor,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                Width = this.Width - DGRIP,
+                Height = this.Height - GRIP - HEADER_SIZE - (HEADER_SIZE / 3),
+                Location = new Point(GRIP, HEADER_SIZE + (HEADER_SIZE / 3)),
+                Padding = new Padding(0),
+                Margin = new Padding(0),
+                AutoSize = false
+            };
+            textBoxWrapper.Controls.Add(textBox);
 
             // make topbar and buttons within
             topbar = new Panel
@@ -270,14 +286,9 @@ namespace Notepad
 
             this.Controls.Add(searchBar);
             this.Controls.Add(topbar);
-            this.Controls.Add(textBox);
+            this.Controls.Add(textBoxWrapper);
         }
 
-        // size elements with window
-        /*private void Form1Resize(object sender, EventArgs e)
-        {
-        
-        }*/
 
         private void OnFormLoad(object sender, EventArgs e)
         {
@@ -292,10 +303,10 @@ namespace Notepad
             HT_CAPTION = 0x2,
             WM_NCHITTEST = 0x84;
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern bool ReleaseCapture();
+        [DllImport("user32.dll")]
+        private static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+        [DllImport("user32.dll")]
+        private static extern bool ReleaseCapture();
 
         private void TopbarMouseDown(object sender, MouseEventArgs e)
         {
@@ -462,6 +473,10 @@ namespace Notepad
         private string OpenFile(string fileToReadFrom)
         {
             string fileContents;
+            if(fileToReadFrom == "")
+            {
+                return "";
+            }
             try
             {
                 fileContents = File.ReadAllText(fileToReadFrom);
@@ -522,8 +537,41 @@ namespace Notepad
             }
         }
 
+        /*[StructLayout(LayoutKind.Sequential)]
+        struct SCROLLINFO
+        {
+            public int cbSize;
+            public ScrollInfoMask fMask;
+            public int nMin;
+            public int nMax;
+            public uint nPage;
+            public int nPos;
+            public int nTrackPos;
+        }
+        public enum ScrollInfoMask : uint
+        {
+            SIF_RANGE = 0x1,
+            SIF_PAGE = 0x2,
+            SIF_POS = 0x4,
+            SIF_DISABLENOSCROLL = 0x8,
+            SIF_TRACKPOS = 0x10,
+            SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS),
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetScrollInfo(IntPtr hwnd, SBOrientation fnBar,
+            ref SCROLLINFO lpsi);
+        public enum SBOrientation : int { SB_HORZ = 0x0, SB_VERT = 0x1 }*/
+
         private void OnTextChanged(object sender, EventArgs e)
         {
+            /*var info = new SCROLLINFO()
+            {
+                cbSize = (Marshal.SizeOf<SCROLLINFO>()),
+                fMask = ScrollInfoMask.SIF_ALL
+            };
+            Console.WriteLine(GetScrollInfo(textBox.Handle, SBOrientation.SB_VERT, ref info));
+            Console.WriteLine(info.nMax);*/
             edited = true;
         }
     }
