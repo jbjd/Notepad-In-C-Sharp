@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Data;
 using System.Drawing;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Windows.Forms;
 
 namespace Notepad
@@ -23,6 +21,7 @@ namespace Notepad
             public int nTrackPos;
 
         }
+        private readonly int structSize = Marshal.SizeOf<SCROLLINFO>();
         protected enum ScrollInfoMask : uint
         {
             SIF_RANGE = 0x1,
@@ -34,17 +33,24 @@ namespace Notepad
         }
 
         [DllImport("user32.dll")]
-        private static extern bool GetScrollInfo(IntPtr hwnd, int fnBar,
+        private static extern bool GetScrollInfo(IntPtr hwnd, int nBar,
             ref SCROLLINFO lpsi);
+        [DllImport("user32.dll")]
+        private static extern bool SetScrollInfo(IntPtr hwnd, int nBar,
+            ref SCROLLINFO lpsi, bool redraw);
+        [DllImport("user32.dll")]
+        private static extern bool PostMessageW(IntPtr hwnd, int Msg, int wParam, int lParam);
+
+        public DraggableScrollBar
+            scrollPanel;
         public Panel
-            scrollPanel,
             scrollWrapper;
 
         public void GetInternalScrollInfo()
         {
             SCROLLINFO info = new SCROLLINFO()
             {
-                cbSize = Marshal.SizeOf<SCROLLINFO>(),
+                cbSize = structSize,
                 fMask = ScrollInfoMask.SIF_ALL
             };
             GetScrollInfo(this.Handle, 1, ref info);
@@ -75,15 +81,45 @@ namespace Notepad
             
         }
 
+        public void SetInternalScrollInfo()
+        {
+            SCROLLINFO info = new SCROLLINFO()
+            {
+                cbSize = structSize,
+                fMask = ScrollInfoMask.SIF_ALL
+            };
+            GetScrollInfo(this.Handle, 1, ref info);
+            int pages = (int)(info.nMax - info.nPage) + 1;
+            double pageSize = (this.Height - scrollPanel.Height) / (double)pages;
+            int ScrollBarPos = (int)(scrollPanel.Location.Y / pageSize);
+
+
+            Console.WriteLine(ScrollBarPos);
+            SCROLLINFO setInfo = new SCROLLINFO
+            {
+                cbSize = structSize,
+                fMask = ScrollInfoMask.SIF_POS,
+                nMin = 0,
+                nMax = info.nMax,
+                nPage = info.nPage,
+                nPos = ScrollBarPos,
+                nTrackPos = info.nTrackPos
+            };
+
+            SetScrollInfo(this.Handle, 1, ref setInfo, false);
+            PostMessageW(this.Handle, 0x115, 4 + 0x10000 * ScrollBarPos, 0);
+        }
+
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
             switch (m.Msg)
             {
-                case 0x20A:
+                case 0x20A:  // mouse scroll
                     GetInternalScrollInfo();
                     break;
             }   
         }
+
     }
 }

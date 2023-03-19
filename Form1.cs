@@ -39,8 +39,8 @@ namespace Notepad
         private Panel
             topbar,
             searchBar,
-            scrollPanel,
             scrollWrapper;
+        private DraggableScrollBar scrollPanel;
         private PictureBox
             exitButton,
             maxButton,
@@ -129,7 +129,8 @@ namespace Notepad
         {
             Color HeaderColor = Color.FromArgb(255, 60, 60, 60),
             TextColor = Color.FromArgb(255, 245, 245, 245),
-            Background = Color.FromArgb(255, 90, 90, 90);
+            Background = Color.FromArgb(255, 90, 90, 90),
+            LightBackground = Color.FromArgb(255, 120, 120, 120);
             // determine font size in future?
             FontSize = 11;
             Font defaultFont = new Font(new FontFamily("Arial"), FontSize);
@@ -144,14 +145,16 @@ namespace Notepad
                 Location = new Point(textBoxWidth, DEFAULT_START),
             };
 
-            scrollPanel = new Panel
+            scrollPanel = new DraggableScrollBar
             {
-                BackColor = Color.FromArgb(255, 120, 120, 120),
+                BackColor = LightBackground,
                 Width = GRIP,
                 Height = 0,
                 Anchor = AnchorStyles.Right,
-                Location = Point.Empty,
+                Location = Point.Empty
             };
+
+            scrollPanel.MouseUp += OnScrollSet;
 
 
             // main text box
@@ -164,7 +167,7 @@ namespace Notepad
                 Multiline = true,
                 Location = Point.Empty,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Width = textBoxWidth + SystemInformation.VerticalScrollBarWidth - GRIP,
+                Width = textBoxWidth + SystemInformation.VerticalScrollBarWidth - GRIP - 1,
                 Height = this.Height - DEFAULT_START - DEFAULT_PADDING,
                 BorderStyle = BorderStyle.None,
                 Font = defaultFont,
@@ -178,13 +181,15 @@ namespace Notepad
                 scrollPanel = scrollPanel,
                 HEADER_SIZE = HEADER_SIZE
             };
+            textBox.TextChanged += OnTextChange;
+            scrollPanel.associatedTextBox = textBox;
 
             // make topbar and buttons within
             Panel textBoxWrapper = new Panel
             {
                 BackColor = HeaderColor,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Width = textBoxWidth - GRIP,
+                Width = textBoxWidth - GRIP - 1,
                 Height = this.Height - DEFAULT_START - DEFAULT_PADDING,
                 Location = new Point(GRIP, HEADER_SIZE + DEFAULT_PADDING),
                 Padding = Padding.Empty,
@@ -299,7 +304,7 @@ namespace Notepad
             // text box for searching
             searchBox = new TextBox
             {
-                BackColor = Color.FromArgb(255, 120, 120, 120),
+                BackColor = LightBackground,
                 ForeColor = TextColor,
                 AcceptsTab = true,
                 Location = Point.Empty,
@@ -312,8 +317,8 @@ namespace Notepad
 
             searchBar.Controls.Add(searchBox);
 
-            textBox.Resize += this.OnTextBoxResize;
-            textBox.TextChanged += this.OnTextChanged;
+            textBox.Resize += this.OnScrollUpdate;
+            textBox.TextChanged += this.OnScrollUpdate;
             textBox.KeyDown += this.HandleHotkey;
             searchBox.KeyDown += this.HandleHotkey;
             this.KeyDown += this.HandleHotkey;
@@ -572,15 +577,17 @@ namespace Notepad
             }
         }
 
-        
-
-        private void OnTextChanged(object sender, EventArgs e)
+        private void OnScrollUpdate(object sender, EventArgs e)
         {
             textBox.GetInternalScrollInfo();
         }
-        private void OnTextBoxResize(object sender, EventArgs e)
+        private void OnScrollSet(object sender, MouseEventArgs e)
         {
-            textBox.GetInternalScrollInfo();
+            textBox.SetInternalScrollInfo();
+        }
+        private void OnTextChange(object sender, EventArgs e)
+        {
+            edited = true;
         }
     }
 }
