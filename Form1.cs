@@ -12,14 +12,16 @@ using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Notepad
-{    
+{
     public partial class Form1 : Form
     {
         // Constants
-        private const int 
+        private const int
             HEADER_SIZE = 30,
+            DEFAULT_PADDING = HEADER_SIZE / 3,
             GRIP = 8,  // Grip size
-            DGRIP = GRIP+GRIP;  // Double the grip size
+            DGRIP = GRIP + GRIP,
+            DEFAULT_START = HEADER_SIZE + GRIP;  // Double the grip size
         private readonly SaveFileDialog saveAsDialog = new SaveFileDialog
         {
             Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*"
@@ -34,17 +36,20 @@ namespace Notepad
         private readonly ImageList exitImages = new ImageList();
         private readonly ImageList maxImages = new ImageList();
         private readonly ImageList minImages = new ImageList();
-        private Panel 
+        private Panel
             topbar,
-            searchBar;
-        private PictureBox 
+            searchBar,
+            scrollPanel,
+            scrollWrapper;
+        private PictureBox
             exitButton,
             maxButton,
             minButton;
         private TextBox
-            searchBox,
+            searchBox;
+        private StyledTextBox
             textBox;
-        
+
         private int FontSize;
         private string curFile = "";
         private bool edited = false;
@@ -123,47 +128,73 @@ namespace Notepad
         private void AddUI(string textToAdd)
         {
             Color HeaderColor = Color.FromArgb(255, 60, 60, 60),
-            TextColor = Color.FromArgb(255, 245, 245, 245);
+            TextColor = Color.FromArgb(255, 245, 245, 245),
+            Background = Color.FromArgb(255, 90, 90, 90);
             // determine font size in future?
             FontSize = 11;
             Font defaultFont = new Font(new FontFamily("Arial"), FontSize);
-            
+            int textBoxWidth = this.Width - DGRIP;
+
+            scrollWrapper = new Panel
+            {
+                BackColor = Background,
+                Width = GRIP,
+                Height = this.Height - DGRIP - HEADER_SIZE,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                Location = new Point(textBoxWidth, DEFAULT_START),
+            };
+
+            scrollPanel = new Panel
+            {
+                BackColor = Color.FromArgb(255, 120, 120, 120),
+                Width = GRIP,
+                Height = 0,
+                Anchor = AnchorStyles.Right,
+                Location = Point.Empty,
+            };
+
 
             // main text box
-            textBox = new TextBox
+            textBox = new StyledTextBox
             {
-                BackColor = Color.FromArgb(255, 90, 90, 90),
+                BackColor = Background,
                 ForeColor = TextColor,
                 AcceptsReturn = true,
                 AcceptsTab = true,
                 Multiline = true,
                 Location = new Point(0, 0),
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Width = this.Width - DGRIP + SystemInformation.VerticalScrollBarWidth,
-                Height = this.Height - GRIP - HEADER_SIZE - (HEADER_SIZE / 3),
+                Width = textBoxWidth + SystemInformation.VerticalScrollBarWidth - GRIP,
+                Height = this.Height - DEFAULT_START - DEFAULT_PADDING,
                 BorderStyle = BorderStyle.None,
                 Font = defaultFont,
                 Text = textToAdd,
                 TabStop = false,
                 TabIndex = 0,
                 ScrollBars = ScrollBars.Vertical,
+                SelectionStart = 0,
+                SelectionLength = 0,
+                scrollWrapper = scrollWrapper,
+                scrollPanel = scrollPanel,
+                HEADER_SIZE = HEADER_SIZE
             };
-
-            textBox.TextChanged += this.OnTextChanged;
 
             // make topbar and buttons within
             Panel textBoxWrapper = new Panel
             {
                 BackColor = HeaderColor,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Width = this.Width - DGRIP,
-                Height = this.Height - GRIP - HEADER_SIZE - (HEADER_SIZE / 3),
-                Location = new Point(GRIP, HEADER_SIZE + (HEADER_SIZE / 3)),
-                Padding = new Padding(0),
-                Margin = new Padding(0),
+                Width = textBoxWidth - GRIP,
+                Height = this.Height - DEFAULT_START - DEFAULT_PADDING,
+                Location = new Point(GRIP, HEADER_SIZE + DEFAULT_PADDING),
+                Padding = Padding.Empty,
+                Margin = Padding.Empty,
                 AutoSize = false
             };
+
             textBoxWrapper.Controls.Add(textBox);
+            textBox.GetInternalScrollInfo(); // set scrollPanel height and location
+            scrollWrapper.Controls.Add(scrollPanel);
 
             // make topbar and buttons within
             topbar = new Panel
@@ -173,18 +204,19 @@ namespace Notepad
                 Height = HEADER_SIZE,
                 Width = this.Width,
                 Location = new Point(0, 0),
-                Padding = new Padding(0),
-                Margin = new Padding(0),
+                Padding = Padding.Empty,
+                Margin = Padding.Empty,
                 AutoSize = false
             };
             topbar.MouseDown += this.TopbarMouseDown;
 
+            Size buttonSize = new Size(HEADER_SIZE, HEADER_SIZE);
             // maximize button in topbar
             minButton = new PictureBox
             {
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Dock = DockStyle.Right,
-                ClientSize = new Size(HEADER_SIZE, HEADER_SIZE),
+                ClientSize = buttonSize,
                 Image = minImages.Images["normal"]
             };
             minButton.Click += this.MinClick;
@@ -197,7 +229,7 @@ namespace Notepad
             {
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Dock = DockStyle.Right,
-                ClientSize = new Size(HEADER_SIZE, HEADER_SIZE),
+                ClientSize = buttonSize,
                 Image = maxImages.Images["normal"]
             };
             maxButton.Click += this.MaxClick;
@@ -210,7 +242,7 @@ namespace Notepad
             {
                 Anchor = AnchorStyles.Right | AnchorStyles.Top,
                 Dock = DockStyle.Right,
-                ClientSize = new Size(HEADER_SIZE, HEADER_SIZE),
+                ClientSize = buttonSize,
                 Image = exitImages.Images["normal"]
             };
             exitButton.Click += this.ExitClick;
@@ -259,7 +291,7 @@ namespace Notepad
                 Anchor = AnchorStyles.Top | AnchorStyles.Right,
                 Location = new Point(this.Width - 360, 30),
                 Padding = new Padding(4),
-                Margin = new Padding(0),
+                Margin = Padding.Empty,
                 AutoSize = false,
                 Visible = false
             };
@@ -280,6 +312,8 @@ namespace Notepad
 
             searchBar.Controls.Add(searchBox);
 
+            textBox.Resize += this.OnTextBoxResize;
+            textBox.TextChanged += this.OnTextChanged;
             textBox.KeyDown += this.HandleHotkey;
             searchBox.KeyDown += this.HandleHotkey;
             this.KeyDown += this.HandleHotkey;
@@ -287,6 +321,7 @@ namespace Notepad
             this.Controls.Add(searchBar);
             this.Controls.Add(topbar);
             this.Controls.Add(textBoxWrapper);
+            this.Controls.Add(scrollWrapper);
         }
 
 
@@ -311,7 +346,7 @@ namespace Notepad
         private void TopbarMouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left) return;
-           
+
             ReleaseCapture();
             SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
         }
@@ -360,7 +395,7 @@ namespace Notepad
                 searchBox.Clear();
                 textBox.Focus();
             }
-            
+
         }
 
         private void Shutdown()
@@ -430,7 +465,7 @@ namespace Notepad
 
                     if (pos.X >= this.ClientSize.Width - GRIP)
                     {
-                        if(onBottom)
+                        if (onBottom)
                         {
                             m.Result = (IntPtr)17; // HTBOTTOMRIGHT
                             return;
@@ -473,7 +508,7 @@ namespace Notepad
         private string OpenFile(string fileToReadFrom)
         {
             string fileContents;
-            if(fileToReadFrom == "")
+            if (fileToReadFrom == "")
             {
                 return "";
             }
@@ -494,7 +529,7 @@ namespace Notepad
             SaveToFile();
         }
 
-        private void OnSaveFail() 
+        private void OnSaveFail()
         {
             // TODO: somehow tell user save to file failed
         }
@@ -537,42 +572,19 @@ namespace Notepad
             }
         }
 
-        /*[StructLayout(LayoutKind.Sequential)]
-        struct SCROLLINFO
-        {
-            public int cbSize;
-            public ScrollInfoMask fMask;
-            public int nMin;
-            public int nMax;
-            public uint nPage;
-            public int nPos;
-            public int nTrackPos;
-        }
-        public enum ScrollInfoMask : uint
-        {
-            SIF_RANGE = 0x1,
-            SIF_PAGE = 0x2,
-            SIF_POS = 0x4,
-            SIF_DISABLENOSCROLL = 0x8,
-            SIF_TRACKPOS = 0x10,
-            SIF_ALL = (SIF_RANGE | SIF_PAGE | SIF_POS | SIF_TRACKPOS),
-        }
-
-        [DllImport("user32.dll")]
-        private static extern bool GetScrollInfo(IntPtr hwnd, SBOrientation fnBar,
-            ref SCROLLINFO lpsi);
-        public enum SBOrientation : int { SB_HORZ = 0x0, SB_VERT = 0x1 }*/
+        
 
         private void OnTextChanged(object sender, EventArgs e)
         {
-            /*var info = new SCROLLINFO()
-            {
-                cbSize = (Marshal.SizeOf<SCROLLINFO>()),
-                fMask = ScrollInfoMask.SIF_ALL
-            };
-            Console.WriteLine(GetScrollInfo(textBox.Handle, SBOrientation.SB_VERT, ref info));
-            Console.WriteLine(info.nMax);*/
-            edited = true;
+            textBox.GetInternalScrollInfo();
+        }
+        private void OnTextBoxResize(object sender, EventArgs e)
+        {
+            textBox.GetInternalScrollInfo();
+        }
+        private void OnTextBoxScroll(object sender, EventArgs e)
+        {
+
         }
     }
 }
