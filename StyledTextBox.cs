@@ -105,12 +105,24 @@ namespace Notepad
             PostMessageW(this.Handle, 0x115, 4 + 0x10000 * ScrollBarPos, 0);
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Down || e.KeyCode == Keys.Up)
+            {
+                GetInternalScrollInfo();
+            }
+            base.OnKeyDown(e);
+        }
+
+        private const int WM_MOUSEWHEEL = 0x20A;
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            if(m.Msg == 0x20A)
+            switch(m.Msg)
             {
-                GetInternalScrollInfo();
+                case WM_MOUSEWHEEL:
+                    GetInternalScrollInfo();
+                    break;
             }
         }
 

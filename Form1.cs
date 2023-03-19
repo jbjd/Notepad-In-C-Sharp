@@ -1,15 +1,13 @@
-﻿using Notepad.Properties;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace Notepad
 {
@@ -54,6 +52,8 @@ namespace Notepad
         private string curFile = "";
         private bool edited = false;
         private ToolStripMenuItem windowSaveMenu;
+        private int cachedSearchIndex = 0;
+        private string previousSearch = "";
 
         public Form1(string fileToReadFrom)
         {
@@ -129,9 +129,7 @@ namespace Notepad
         {
             Color HeaderColor = Color.FromArgb(255, 60, 60, 60),
             TextColor = Color.FromArgb(255, 245, 245, 245),
-            Background = Color.FromArgb(255, 90, 90, 90),
-            LightBackground = Color.FromArgb(255, 120, 120, 120);
-            // determine font size in future?
+            Background = Color.FromArgb(255, 90, 90, 90);
             FontSize = 11;
             Font defaultFont = new Font(new FontFamily("Arial"), FontSize);
             int textBoxWidth = this.Width - DGRIP;
@@ -147,7 +145,7 @@ namespace Notepad
 
             scrollPanel = new DraggableScrollBar
             {
-                BackColor = LightBackground,
+                BackColor = Color.FromArgb(255, 120, 120, 120),
                 Width = GRIP,
                 Height = 0,
                 Anchor = AnchorStyles.Right,
@@ -179,7 +177,8 @@ namespace Notepad
                 SelectionLength = 0,
                 scrollWrapper = scrollWrapper,
                 scrollPanel = scrollPanel,
-                HEADER_SIZE = HEADER_SIZE
+                HEADER_SIZE = HEADER_SIZE,
+                HideSelection = false
             };
             textBox.TextChanged += OnTextChange;
             scrollPanel.associatedTextBox = textBox;
@@ -214,6 +213,36 @@ namespace Notepad
                 AutoSize = false
             };
             topbar.MouseDown += this.TopbarMouseDown;
+
+            searchBar = new Panel
+            {
+                BackColor = HeaderColor,
+                Height = HEADER_SIZE,
+                Width = 360,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Dock = DockStyle.Right,
+                Padding = new Padding(4),
+                Margin = Padding.Empty,
+                AutoSize = false,
+                Visible = false
+            };
+
+            // text box for searching
+            searchBox = new TextBox
+            {
+                BackColor = Color.FromArgb(255, 85, 85, 85),
+                ForeColor = TextColor,
+                AcceptsTab = true,
+                Location = Point.Empty,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.None,
+                Font = defaultFont,
+                TabStop = false
+            };
+            searchBox.KeyDown += OnSubmitSearch;
+            searchBar.Controls.Add(searchBox);
+            topbar.Controls.Add(searchBar);
 
             Size buttonSize = new Size(HEADER_SIZE, HEADER_SIZE);
             // maximize button in topbar
@@ -288,47 +317,47 @@ namespace Notepad
 
             topbar.Controls.Add(Menu);
 
-            searchBar = new Panel
-            {
-                BackColor = HeaderColor,
-                Height = HEADER_SIZE,
-                Width = 360,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Location = new Point(this.Width - 360, 30),
-                Padding = new Padding(4),
-                Margin = Padding.Empty,
-                AutoSize = false,
-                Visible = false
-            };
-
-            // text box for searching
-            searchBox = new TextBox
-            {
-                BackColor = LightBackground,
-                ForeColor = TextColor,
-                AcceptsTab = true,
-                Location = Point.Empty,
-                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None,
-                Font = defaultFont,
-                TabStop = false
-            };
-
-            searchBar.Controls.Add(searchBox);
-
             textBox.Resize += this.OnScrollUpdate;
             textBox.TextChanged += this.OnScrollUpdate;
             textBox.KeyDown += this.HandleHotkey;
             searchBox.KeyDown += this.HandleHotkey;
             this.KeyDown += this.HandleHotkey;
 
-            this.Controls.Add(searchBar);
+            
             this.Controls.Add(topbar);
             this.Controls.Add(textBoxWrapper);
             this.Controls.Add(scrollWrapper);
         }
 
+        private void OnSubmitSearch(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter || searchBox.Text == "") return;
+
+            if(searchBox.Text != previousSearch)
+            {
+                cachedSearchIndex = 0;
+            }
+            previousSearch = searchBox.Text;
+
+            SearchStart:
+            int index = textBox.Text.IndexOf(searchBox.Text, cachedSearchIndex, StringComparison.OrdinalIgnoreCase);
+            if(index == -1)
+            {
+                if(cachedSearchIndex != 0)
+                {
+                    cachedSearchIndex = 0;
+                    goto SearchStart;
+                }
+            }
+            else
+            {
+                textBox.Focus();
+                textBox.SelectionStart = index;
+                textBox.SelectionLength = searchBox.Text.Length;
+                searchBox.Focus();
+                cachedSearchIndex = index + textBox.SelectionLength;
+            }
+        }
 
         private void OnFormLoad(object sender, EventArgs e)
         {
@@ -398,6 +427,7 @@ namespace Notepad
             else
             {
                 searchBox.Clear();
+                previousSearch = "";
                 textBox.Focus();
             }
 
