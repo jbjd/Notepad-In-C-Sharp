@@ -356,6 +356,8 @@ namespace Notepad
                 textBox.SelectionLength = searchBox.Text.Length;
                 searchBox.Focus();
                 cachedSearchIndex = index + textBox.SelectionLength;
+                textBox.ScrollToCaret();
+                textBox.GetInternalScrollInfo();
             }
         }
 
