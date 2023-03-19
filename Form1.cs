@@ -214,36 +214,6 @@ namespace Notepad
             };
             topbar.MouseDown += this.TopbarMouseDown;
 
-            searchBar = new Panel
-            {
-                BackColor = HeaderColor,
-                Height = HEADER_SIZE,
-                Width = 360,
-                Anchor = AnchorStyles.Top | AnchorStyles.Right,
-                Dock = DockStyle.Right,
-                Padding = new Padding(4),
-                Margin = Padding.Empty,
-                AutoSize = false,
-                Visible = false
-            };
-
-            // text box for searching
-            searchBox = new TextBox
-            {
-                BackColor = Color.FromArgb(255, 85, 85, 85),
-                ForeColor = TextColor,
-                AcceptsTab = true,
-                Location = Point.Empty,
-                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
-                Dock = DockStyle.Fill,
-                BorderStyle = BorderStyle.None,
-                Font = defaultFont,
-                TabStop = false
-            };
-            searchBox.KeyDown += OnSubmitSearch;
-            searchBar.Controls.Add(searchBox);
-            topbar.Controls.Add(searchBar);
-
             Size buttonSize = new Size(HEADER_SIZE, HEADER_SIZE);
             // maximize button in topbar
             minButton = new PictureBox
@@ -256,7 +226,7 @@ namespace Notepad
             minButton.Click += this.MinClick;
             minButton.MouseEnter += this.MinHoverEnter;
             minButton.MouseLeave += this.MinHoverExit;
-            topbar.Controls.Add(minButton);
+            
 
             // maximize button in topbar
             maxButton = new PictureBox
@@ -269,7 +239,7 @@ namespace Notepad
             maxButton.Click += this.MaxClick;
             maxButton.MouseEnter += this.MaxHoverEnter;
             maxButton.MouseLeave += this.MaxHoverExit;
-            topbar.Controls.Add(maxButton);
+            
 
             // exit button in topbar
             exitButton = new PictureBox
@@ -282,7 +252,7 @@ namespace Notepad
             exitButton.Click += this.ExitClick;
             exitButton.MouseEnter += this.ExitHoverEnter;
             exitButton.MouseLeave += this.ExitHoverExit;
-            topbar.Controls.Add(exitButton);
+            
 
             MenuStrip Menu = new MenuStrip
             {
@@ -315,6 +285,40 @@ namespace Notepad
             Menu.MdiWindowListItem = windowMenu;
             Menu.Items.Add(windowMenu);
 
+            searchBar = new Panel
+            {
+                BackColor = HeaderColor,
+                Height = HEADER_SIZE,
+                Width = 360,
+                Anchor = AnchorStyles.Top | AnchorStyles.Right,
+                Dock = DockStyle.Right,
+                Padding = new Padding(4),
+                Margin = Padding.Empty,
+                AutoSize = false,
+                Visible = false
+            };
+
+            // text box for searching
+            searchBox = new TextBox
+            {
+                BackColor = Color.FromArgb(255, 85, 85, 85),
+                ForeColor = TextColor,
+                AcceptsTab = true,
+                Location = Point.Empty,
+                Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
+                Dock = DockStyle.Fill,
+                BorderStyle = BorderStyle.None,
+                Font = defaultFont,
+                TabStop = false
+            };
+            searchBox.KeyDown += OnSubmitSearch;
+            searchBar.Controls.Add(searchBox);
+            topbar.Controls.Add(searchBar);
+
+
+            topbar.Controls.Add(minButton);
+            topbar.Controls.Add(maxButton);
+            topbar.Controls.Add(exitButton);
             topbar.Controls.Add(Menu);
 
             textBox.Resize += this.OnScrollUpdate;
@@ -491,8 +495,7 @@ namespace Notepad
             switch (m.Msg)
             {
                 case WM_NCHITTEST:
-                    Point pos = new Point(m.LParam.ToInt32());
-                    pos = this.PointToClient(pos);
+                    Point pos = this.PointToClient(new Point(m.LParam.ToInt32()));
                     if (pos.Y < HEADER_SIZE)
                     {
                         m.Result = (IntPtr)2;  // HTCAPTION

@@ -93,15 +93,10 @@ namespace Notepad
             double pageSize = (this.Height - scrollPanel.Height) / pages;
             int ScrollBarPos = (int)(scrollPanel.Location.Y / pageSize);
 
+            info.fMask = ScrollInfoMask.SIF_POS;
+            info.nPos = ScrollBarPos;
 
-            SCROLLINFO setInfo = new SCROLLINFO
-            {
-                cbSize = structSize,
-                fMask = ScrollInfoMask.SIF_POS,
-                nPos = ScrollBarPos,
-            };
-
-            SetScrollInfo(this.Handle, 1, ref setInfo, false);
+            SetScrollInfo(this.Handle, 1, ref info, false);
             PostMessageW(this.Handle, 0x115, 4 + 0x10000 * ScrollBarPos, 0);
         }
 
