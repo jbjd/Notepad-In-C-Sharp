@@ -162,7 +162,7 @@ namespace Notepad
                 AcceptsReturn = true,
                 AcceptsTab = true,
                 Multiline = true,
-                Location = new Point(0, 0),
+                Location = Point.Empty,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
                 Width = textBoxWidth + SystemInformation.VerticalScrollBarWidth - GRIP,
                 Height = this.Height - DEFAULT_START - DEFAULT_PADDING,
@@ -203,7 +203,7 @@ namespace Notepad
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right,
                 Height = HEADER_SIZE,
                 Width = this.Width,
-                Location = new Point(0, 0),
+                Location = Point.Empty,
                 Padding = Padding.Empty,
                 Margin = Padding.Empty,
                 AutoSize = false
@@ -302,7 +302,7 @@ namespace Notepad
                 BackColor = Color.FromArgb(255, 120, 120, 120),
                 ForeColor = TextColor,
                 AcceptsTab = true,
-                Location = new Point(0, 0),
+                Location = Point.Empty,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right | AnchorStyles.Bottom,
                 Dock = DockStyle.Fill,
                 BorderStyle = BorderStyle.None,
@@ -581,10 +581,6 @@ namespace Notepad
         private void OnTextBoxResize(object sender, EventArgs e)
         {
             textBox.GetInternalScrollInfo();
-        }
-        private void OnTextBoxScroll(object sender, EventArgs e)
-        {
-
         }
     }
 }
