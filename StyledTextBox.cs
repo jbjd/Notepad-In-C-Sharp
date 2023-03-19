@@ -89,21 +89,16 @@ namespace Notepad
                 fMask = ScrollInfoMask.SIF_ALL
             };
             GetScrollInfo(this.Handle, 1, ref info);
-            int pages = (int)(info.nMax - info.nPage) + 1;
-            double pageSize = (this.Height - scrollPanel.Height) / (double)pages;
+            double pages = info.nMax - info.nPage + 1.0;
+            double pageSize = (this.Height - scrollPanel.Height) / pages;
             int ScrollBarPos = (int)(scrollPanel.Location.Y / pageSize);
 
 
-            Console.WriteLine(ScrollBarPos);
             SCROLLINFO setInfo = new SCROLLINFO
             {
                 cbSize = structSize,
                 fMask = ScrollInfoMask.SIF_POS,
-                nMin = 0,
-                nMax = info.nMax,
-                nPage = info.nPage,
                 nPos = ScrollBarPos,
-                nTrackPos = info.nTrackPos
             };
 
             SetScrollInfo(this.Handle, 1, ref setInfo, false);
@@ -113,12 +108,10 @@ namespace Notepad
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
-            switch (m.Msg)
+            if(m.Msg == 0x20A)
             {
-                case 0x20A:  // mouse scroll
-                    GetInternalScrollInfo();
-                    break;
-            }   
+                GetInternalScrollInfo();
+            }
         }
 
     }
