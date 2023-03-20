@@ -622,6 +622,8 @@ namespace Notepad
         }
         private void OnTextChange(object sender, EventArgs e)
         {
+            cachedSearchIndex = 0;
+            previousSearch = "";
             edited = true;
         }
     }
