@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
+using System.Threading.Tasks;
 
 namespace Notepad
 {
@@ -29,6 +30,8 @@ namespace Notepad
             Filter = "Text files (*.txt)|*.txt|All files (*.*)|*.*",
             FilterIndex = 2
         };
+        private readonly Color searchNormal = Color.FromArgb(255, 85, 85, 85),
+            searchNotFound = Color.FromArgb(255, 230, 80, 95);
 
         // Members
         private readonly ImageList exitImages = new ImageList();
@@ -301,7 +304,7 @@ namespace Notepad
             // text box for searching
             searchBox = new TextBox
             {
-                BackColor = Color.FromArgb(255, 85, 85, 85),
+                BackColor = searchNormal,
                 ForeColor = TextColor,
                 AcceptsTab = true,
                 Location = Point.Empty,
@@ -324,6 +327,7 @@ namespace Notepad
             textBox.Resize += this.OnScrollUpdate;
             textBox.TextChanged += this.OnScrollUpdate;
             textBox.KeyDown += this.HandleHotkey;
+            searchBox.KeyDown += this.QuiteEnter;
             searchBox.KeyDown += this.HandleHotkey;
             this.KeyDown += this.HandleHotkey;
 
@@ -347,10 +351,15 @@ namespace Notepad
             int index = textBox.Text.IndexOf(searchBox.Text, cachedSearchIndex, StringComparison.OrdinalIgnoreCase);
             if(index == -1)
             {
-                if(cachedSearchIndex != 0)
+                if (cachedSearchIndex != 0)
                 {
                     cachedSearchIndex = 0;
                     goto SearchStart;
+                }
+                else
+                {
+                    searchBox.BackColor = searchNotFound;
+                    Task.Delay(400).ContinueWith(t => resetBackground());
                 }
             }
             else
@@ -363,6 +372,11 @@ namespace Notepad
                 textBox.ScrollToCaret();
                 textBox.GetInternalScrollInfo();
             }
+        }
+
+        private void resetBackground()
+        {
+            searchBox.BackColor = searchNormal;
         }
 
         private void OnFormLoad(object sender, EventArgs e)
@@ -389,6 +403,15 @@ namespace Notepad
 
             ReleaseCapture();
             SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+        }
+
+        private void QuiteEnter(object sender, KeyEventArgs e)
+        {
+            if(e.KeyCode == Keys.Enter)
+            {
+                e.SuppressKeyPress = true;
+                e.Handled = true;
+            }
         }
 
         private void HandleHotkey(object sender, KeyEventArgs e)
@@ -419,8 +442,8 @@ namespace Notepad
                     return;
             }
             // prevent windows error sound from playing when ctrl+f
-            e.Handled = true;
             e.SuppressKeyPress = true;
+            e.Handled = true;
         }
 
         private void ToggleTextSearch()
