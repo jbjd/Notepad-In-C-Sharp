@@ -564,12 +564,12 @@ namespace Notepad
             if (openDialog.ShowDialog() == DialogResult.OK)
             {
                 textBox.Text = OpenFile(openDialog.FileName);
+                textBox.ClearUndo();
             }
         }
 
         private string OpenFile(string fileToReadFrom)
         {
-            textBox.ClearUndo();
             string fileContents;
             if (fileToReadFrom == "")
             {
