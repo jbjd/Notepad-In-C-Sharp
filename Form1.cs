@@ -7,7 +7,6 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows.Input;
 using System.Threading.Tasks;
 
 namespace Notepad
@@ -570,6 +569,7 @@ namespace Notepad
 
         private string OpenFile(string fileToReadFrom)
         {
+            textBox.ClearUndo();
             string fileContents;
             if (fileToReadFrom == "")
             {
